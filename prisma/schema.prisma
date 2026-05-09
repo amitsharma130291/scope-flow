@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  agencies      Agency[]
+  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Agency {
+  id          String     @id @default(cuid())
+  name        String
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clients     Client[]
+  proposals   Proposal[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Client {
+  id           String     @id @default(cuid())
+  name         String
+  industry     String?
+  website      String?
+  contactName  String?
+  contactEmail String?
+  agencyId     String
+  agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  proposals    Proposal[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Proposal {
+  id        String            @id @default(cuid())
+  title     String
+  status    ProposalStatus    @default(DRAFT)
+  adBudget  Int?
+  platforms String[]
+  services  String[]
+  timeline  String?
+  pricing   Int?
+
+  clientId  String
+  agencyId  String
+  client    Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  agency    Agency            @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  sections  ProposalSection[]
+
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model ProposalSection {
+  id         String   @id @default(cuid())
+  title      String
+  content    String
+  order      Int
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Subscription {
+  id                   String           @id @default(cuid())
+  userId               String
+  plan                 SubscriptionPlan @default(STARTER)
+  status               String           @default("active")
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+}
+
+enum ProposalStatus {
+  DRAFT
+  GENERATED
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+enum SubscriptionPlan {
+  STARTER
+  PRO
+  AGENCY
+}
